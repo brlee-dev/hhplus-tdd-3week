@@ -1,7 +1,3 @@
-# hhplus-tdd-3week
-
-시나리오 선정 및 프로젝트 Milestone 제출
-
 # 시나리오 선정 
   - 콘서트 예약 서비스
 
@@ -144,6 +140,14 @@
 ![image](https://github.com/user-attachments/assets/cbb8f61e-d735-47a6-a94e-646a0bb69151)
 
 ---
+
+## 4. 잔액 충전 / 조회 API 요청
+![image](https://github.com/user-attachments/assets/33e874bd-4b8f-471e-b5ee-aa8a7fccb201)
+
+---
+
+## 5. 결제 API 요청
+![image](https://github.com/user-attachments/assets/33d065a8-782e-4b52-b896-068442f56900)
 
 
 

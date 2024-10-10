@@ -1,75 +1,299 @@
-# 콘서트 예약 서비스
+# 콘서트 예약 서비스 ERD
+![image](https://github.com/user-attachments/assets/64903fcb-a159-47ff-89ab-2b1fb86e95fd)
 
-<aside>
-💡 아래 명세를 잘 읽어보고, 서버를 구현합니다.
+---
 
-</aside>
+# API 명세 작성
 
-## Description
+## 1. 유저 토큰 발급 API
 
-- **`콘서트 예약 서비스`**를 구현해 봅니다.
-- 대기열 시스템을 구축하고, 예약 서비스는 작업가능한 유저만 수행할 수 있도록 해야합니다.
-- 사용자는 좌석예약 시에 미리 충전한 잔액을 이용합니다.
-- 좌석 예약 요청시에, 결제가 이루어지지 않더라도 일정 시간동안 다른 유저가 해당 좌석에 접근할 수 없도록 합니다.
+### 설명
+- 사용자가 대기열에 들어가 서비스에 접근할 수 있도록, 대기열 토큰을 발급합니다.
+  
+### 엔드포인트
+- `POST /api/v1/queue/token`
 
-## Requirements
+### 요청
+```json
+{
+  "userId": "12345"
+}
+```
 
-- 아래 5가지 API 를 구현합니다.
-    - 유저 토큰 발급 API
-    - 예약 가능 날짜 / 좌석 API
-    - 좌석 예약 요청 API
-    - 잔액 충전 / 조회 API
-    - 결제 API
-- 각 기능 및 제약사항에 대해 단위 테스트를 반드시 하나 이상 작성하도록 합니다.
-- 다수의 인스턴스로 어플리케이션이 동작하더라도 기능에 문제가 없도록 작성하도록 합니다.
-- 동시성 이슈를 고려하여 구현합니다.
-- 대기열 개념을 고려해 구현합니다.
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "token": "gAAAAABnB37u4-_UVh4T8vfPb-59a6EUiBORbQyaN4J30j0ukacslIYJN5U3_q2e6pS1iGpe16xRUqRXoxzIn2Css6nj9hQhnMspZXc7DpOZIVg7UgegENxB7Br7sumCprzZHlHW87gN9F7eaoUVhp1bqxyw9C8_PbpFNjQD6uTvQy-uFfa0yFg",
+  "queuePosition": 5,
+  "remainingTime": "10:00"
+}
+```
+- 실패, 이미 대기열에 존재하는 경우(HTTP 409)
+```json
+{
+  "status": "error",
+  "message": "이미 예약 요청 상태 입니다."
+}
+```
 
-## API Specs
+---
 
-1️⃣ **`주요` 유저 대기열 토큰 기능**
+## 2. 예약 가능 날짜 조회 API
 
-- 서비스를 이용할 토큰을 발급받는 API를 작성합니다.
-- 토큰은 유저의 UUID 와 해당 유저의 대기열을 관리할 수 있는 정보 ( 대기 순서 or 잔여 시간 등 ) 를 포함합니다.
-- 이후 대기열에 의해 **보호받는** 모든 API 는 위 토큰을 이용해 대기열 검증을 통과해야 이용 가능합니다.
-- **내 대기번호를 조회하는 폴링용 API를 작성합니다.**
+### 설명
+- 예약 가능한 날짜 목록을 반환 합니다.
+  
+### 엔드포인트
+- `GET /api/v1/seats/dates`
 
-> 기본적으로 폴링으로 본인의 대기열을 확인한다고 가정하며, 다른 방안 또한 고려해보고 구현해 볼 수 있습니다.
-> 
+### 요청
+- 없음
 
-**2️⃣ `기본` 예약 가능 날짜 / 좌석 API**
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "availableDates": [
+    "2024-10-10",
+    "2024-10-11",
+    "2024-10-12"
+  ]
+}
+```
 
-- 예약가능한 날짜와 해당 날짜의 좌석을 조회하는 API 를 각각 작성합니다.
-- 예약 가능한 날짜 목록을 조회할 수 있습니다.
-- 날짜 정보를 입력받아 예약가능한 좌석정보를 조회할 수 있습니다.
+---
 
-> 좌석 정보는 1 ~ 50 까지의 좌석번호로 관리됩니다.
-> 
+## 3. 특정 날짜의 좌석 조회 API
 
-3️⃣ **`주요` 좌석 예약 요청 API**
+### 설명
+- 특정 날짜에 예약 가능한 좌석 목록을 조회합니다.
+  
+### 엔드포인트
+- `GET /api/v1/seats?date=YYYY-MM-DD`
 
-- 좌석 예약과 동시에 해당 좌석은 그 유저에게 약 5분간 임시 배정됩니다. ( 시간은 정책에 따라 자율적으로 정의합니다. )
-- 날짜와 좌석 정보를 입력받아 좌석을 예약 처리하는 API 를 작성합니다.
-- 만약 배정 시간 내에 결제가 완료되지 않는다면 좌석에 대한 임시 배정은 해제되어야 하며 임시배정 상태의 좌석에 대해 다른 사용자는 예약할 수 없어야 한다.
+### 요청
+```json
+{
+  "date": "2024-10-10"
+}
+```
 
-4️⃣ **`기본`**  **잔액 충전 / 조회 API**
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "availableSeats": [
+    {"seatNumber": 1, "isReserved": false},
+    {"seatNumber": 2, "isReserved": false},
+    {"seatNumber": 3, "isReserved": true}
+  ]
+}
+```
+- 실패, 날짜 형식이 잘못된 경우(HTTP 400)
+```json
+{
+  "status": "error",
+  "message": "잘못된 날짜 입니다."
+}
+```
 
-- 결제에 사용될 금액을 API 를 통해 충전하는 API 를 작성합니다.
-- 사용자 식별자 및 충전할 금액을 받아 잔액을 충전합니다.
-- 사용자 식별자를 통해 해당 사용자의 잔액을 조회합니다.
+---
 
-5️⃣ **`주요` 결제 API**
+## 4. 좌석 예약 요청 API
 
-- 결제 처리하고 결제 내역을 생성하는 API 를 작성합니다.
-- 결제가 완료되면 해당 좌석의 소유권을 유저에게 배정하고 대기열 토큰을 만료시킵니다.
+### 설명
+- 특정 날짜의 특정 좌석을 임시로 예약합니다. 임시 예약은 약 5분 동안 유지되며, 결제가 완료되지 않으면 해제됩니다.
+  
+### 엔드포인트
+- `POST /api/v1/reservations`
 
-<aside>
-💡 **KEY POINT**
+### 요청
+```json
+{
+  "userId": "12345",
+  "token": "gAAAAABnB37u4-_UVh4T8vfPb-59a6EUiBORbQyaN4J30j0ukacslIYJN5U3_q2e6pS1iGpe16xRUqRXoxzIn2Css6nj9hQhnMspZXc7DpOZIVg7UgegENxB7Br7sumCprzZHlHW87gN9F7eaoUVhp1bqxyw9C8_PbpFNjQD6uTvQy-uFfa0yFg",
+  "date": "2024-10-10",
+  "seatNumber": 1
+}
+```
 
-</aside>
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "status": "success",
+  "reservationId": "67890",
+  "message": "Seat reserved temporarily for 5 minutes."
+}
+```
+- 실패, 좌석이 이미 예역된 경우(HTTP 409)
+```json
+{
+  "status": "error",
+  "message": "이미 다른사람이 예약한 좌석 입니다."
+}
+```
 
-- 유저간 대기열을 요청 순서대로 정확하게 제공할 방법을 고민해 봅니다.
-- 동시에 여러 사용자가 예약 요청을 했을 때, 좌석이 중복으로 배정 가능하지 않도록 합니다.
+- 실패, 유효하지 않은 토큰(HTTP 401)
+```json
+{
+  "status": "error",
+  "message": "관리자에게 문의 하세요."
+}
+```
 
+---
 
+## 5. 잔액 충전 API
 
+### 설명
+- 사용자가 결제에 필요한 금액을 충전합니다.
+  
+### 엔드포인트
+- `POST /api/v1/users/balance`
+
+### 요청
+```json
+{
+  "userId": "12345",
+  "amount": 10000
+}
+```
+
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "status": "success",
+  "newBalance": 15000
+}
+```
+- 실패, 잘못된 요청(HTTP 400)
+```json
+{
+  "status": "error",
+  "message": "입력 값은 0보다 커야합니다"
+}
+```
+
+---
+
+## 6. 잔액 조회 API
+
+### 설명
+- 사용자의 현재 잔액을 조회 합니다.
+  
+### 엔드포인트
+- `GET /api/v1/users/balance?userId=12345`
+
+### 요청
+```json
+{
+  "userId": "12345",
+}
+```
+
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "userId": "12345",
+  "balance": 15000
+}
+```
+- 실패, 사용자 없음(HTTP 404)
+```json
+{
+  "status": "error",
+  "message": "존재 하지 않은 사용자입니다."
+}
+```
+
+---
+
+## 7. 결제 API
+
+### 설명
+- 임시 예약된 좌석에 대해 결제를 진행하고, 결제가 완료되면 좌석의 소유권을 확정합니다.
+  
+### 엔드포인트
+- `POST /api/v1/payments`
+
+### 요청
+```json
+{
+  "userId": "12345",
+  "reservationId": "67890",
+  "token": "gAAAAABnB37u4-_UVh4T8vfPb-59a6EUiBORbQyaN4J30j0ukacslIYJN5U3_q2e6pS1iGpe16xRUqRXoxzIn2Css6nj9hQhnMspZXc7DpOZIVg7UgegENxB7Br7sumCprzZHlHW87gN9F7eaoUVhp1bqxyw9C8_PbpFNjQD6uTvQy-uFfa0yFg"
+}
+```
+
+### 응답
+ - 성공(HTTP 200)
+```json
+{
+  "status": "success",
+  "message": "충전이 완료 되었습니다.",
+  "newBalance": 5000
+}
+```
+- 실패, 잔액 부족(HTTP 402)
+```json
+{
+  "status": "error",
+  "message": "잔액이 부족 합니다."
+}
+```
+
+- 실패, 예약 만료(HTTP 410)
+```json
+{
+  "status": "error",
+  "message": "예약이 만료 되었습니다."
+}
+```
+
+---
+# 기본 패키지 구조
+
+```plaintext
+src/main/java/com/concertreservation/
+│
+├── application            # 유스케이스와 비즈니스 로직 레이어
+│   ├── service            # 서비스 클래스
+│   └── dto                # 요청/응답 DTO 클래스
+│
+├── domain                 # Domain 레이어
+│   ├── model              # 엔티티 및 핵심 도메인 모델
+│   ├── repository         # 인터페이스로 구현한 리포지토리 (Repository 인터페이스)
+│   └── exception          # 도메인 관련 예외 처리
+│
+├── infrastructure         # Infrastructure 레이어
+│   ├── persistence        # JPA 엔티티 및 Repository 구현체
+│   ├── queue              # 대기열 시스템
+│   └── config             # Spring 설정 파일 및 의존성 설정
+│
+└── interface              # Presentation 레이어
+    ├── controller         # REST 컨트롤러 (API 엔드포인트)
+    └── security           # 보안 및 인증 관련
+```
+
+---
+
+# 기술 스택
+
+1. **Main Framework**
+   - Spring Boot
+
+2. **Test Framework**
+   - JUnit
+
+3. **DBMS**
+   - MySQL
+
+4. **ORM & 데이터베이스 액세스**
+   - Spring Data JPA
+
+5. **빌드 도구**
+   - Gradle
